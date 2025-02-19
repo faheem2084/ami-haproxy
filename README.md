@@ -1,2 +1,1 @@
-# ami-haproxy
-AMI connection scaling using HA
+# haproxy to balance the AMI - ORIGINATE requests between multiple ASTERISK Instances

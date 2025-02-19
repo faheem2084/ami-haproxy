@@ -1,0 +1,56 @@
+
+services:
+  # HAProxy Load Balancer
+  haproxy:
+    image: haproxy:2.6
+    container_name: haproxy
+    ports:
+      - "5038:5038"  # Expose port 5038 for Asterisk AMI traffic
+      - "8080:8080"  # HAProxy stats dashboard (optional)
+    volumes:
+      - ./app/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - asterisk1
+      - asterisk2
+    networks:
+      - app-network
+
+  # First Asterisk Server
+  asterisk1:
+    image: andrius/asterisk:latest
+    container_name: asterisk1
+    environment:
+      - AST_MANAGER_PASSWORD=password1  # Set AMI password
+    ports:
+      - "5060:5060/udp"  # SIP port (optional)
+    networks:
+      - app-network
+
+  # Second Asterisk Server
+  asterisk2:
+    image: andrius/asterisk:latest
+    container_name: asterisk2
+    environment:
+      - AST_MANAGER_PASSWORD=password2  # Set AMI password
+    ports:
+      - "5061:5060/udp"  # SIP port (optional)
+    networks:
+      - app-network
+
+  ami-client:
+    build:
+      context: ./app/pyapp
+      dockerfile: dockerfile
+    container_name: ami-client
+    volumes:
+      - ./app/pyapp/ami-client:/usr/src/app  # Volume for persisting or sharing files
+    networks:
+      - app-network
+    depends_on:
+      - asterisk1
+      - asterisk2
+
+# Define a custom network for the services
+networks:
+  app-network:
+    driver: bridge
